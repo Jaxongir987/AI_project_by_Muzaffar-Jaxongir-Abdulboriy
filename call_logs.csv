@@ -1,0 +1,6 @@
+client_id,age,language,channel,notification,call_time,response,result,comment
+10006,52,ru,landline,debt,2025-04-19 19:37,да я оплатил,success,confirmed payment
+10006,52,ru,landline,debt,2025-04-19 19:38,нет не оплатил,success,confirmed payment
+10010,64,en,mobile,tariff,2025-04-19 19:41,,fail,no response
+10010,18,ru,landline,tariff,2025-04-19 19:42,хочу да хочу,success,info received
+10010,45,ru,mobile,tariff,2025-04-19 19:44,нет,success,info received
