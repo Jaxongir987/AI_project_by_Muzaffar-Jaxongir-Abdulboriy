@@ -1,7 +1,7 @@
 import pyttsx3
 import speech_recognition as sr
 import datetime
-import sqlite3
+import time  # time extension for delay
 
 # Init TTS engine with male voice
 tts_engine = pyttsx3.init()
@@ -101,7 +101,11 @@ def make_call(client_id):
 
     # Ask if customer needs help
     speak(t["help"])
-    listen(lang)
+    help_response = listen(lang)
+
+    # Add 5-second pause if user says they need help
+    if any(phrase in help_response for phrase in ["yes", "i need help", "да", "нужна помощь", "помоги"]):
+        time.sleep(5)
 
     # Share tariff info
     speak(t["tariff"])
@@ -133,7 +137,11 @@ def make_call(client_id):
     return {
         "client_id": client_id,
         "result": result,
-        "comment": f"{comment}; name: {name}, age: {age}, notify: {notification}, comm: {comm}"
+        "comment": f"{comment}\n"
+                   f"name: {name}\n"
+                   f"age: {age}\n"
+                   f"notify: {notification}\n"
+                   f"comm: {comm}"
     }
 
 # Log result in table format
@@ -146,6 +154,3 @@ def log_result(result_dict):
 # Example call
 call_result = make_call(10001)
 log_result(call_result)
-
-
-take 5 seconds delay after hearing to question about help the answer "yes" or "I need help" another case continue
