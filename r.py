@@ -1,48 +1,56 @@
-import pyttsx3
-import speech_recognition as sr
+import os
+import time
 import datetime
-import sqlite3
+import speech_recognition as sr
+from TTS.api import TTS
+from playsound import playsound
 
-# Init TTS engine with male voice
-tts_engine = pyttsx3.init()
-voices = tts_engine.getProperty('voices')
-for voice in voices:
-    if "male" in voice.name.lower():
-        tts_engine.setProperty('voice', voice.id)
-        break
+# Initialize TTS model
+tts = TTS(model_name="tts_models/multilingual/multi-dataset/your_tts", progress_bar=False, gpu=False)
 
-# Speak
-def speak(text):
+# Get speakers
+available_speakers = tts.speakers
+speaker_map = {
+    "en": available_speakers[0],
+    "ru": available_speakers[1]
+}
+
+# Speak using TTS and play WAV
+def speak(text, lang="en"):
+    speaker = speaker_map.get(lang, available_speakers[0])
+    file_path = "output.wav"
     print("Bot:", text)
-    tts_engine.say(text)
-    tts_engine.runAndWait()
+    tts.tts_to_file(text=text, speaker=speaker, language=lang, file_path=file_path)
+    playsound(file_path)
+    time.sleep(1)
 
-# Listen (with retry if unknown)
+# Listen with retries
 def listen(language="en-US", retries=2):
     recognizer = sr.Recognizer()
     for _ in range(retries):
         with sr.Microphone() as source:
-            print("Listening...")
+            print("🎤 Listening...")
             audio = recognizer.listen(source)
         try:
             response = recognizer.recognize_google(audio, language=language)
             print("User:", response)
             return response.lower()
         except sr.UnknownValueError:
-            speak("I didn't catch that. Please repeat.")
+            speak("I didn't catch that. Please repeat.", lang=language[:2])
         except sr.RequestError:
-            speak("Service error. Try again later.")
+            speak("Service error. Try again later.", lang=language[:2])
             return "error"
     return "unknown"
 
 # Main call logic
 def make_call(client_id):
-    speak("Здравствуйте!  Hello! This is a call from your bank.")
-    speak("Please say your preferred language: English or Russian.")
-    
-    lang_response = listen(language="en-US")
+    speak("Здравствуйте! Hello! This is a call from your bank.", lang="en")
+    speak("Please say your preferred language: English or Russian.", lang="en")
+    lang_response = listen("en-US")
+
     if "russian" in lang_response or "рус" in lang_response:
-        lang = "ru-RU"
+        lang_code = "ru"
+        recog_lang = "ru-RU"
         t = {
             "greet": "Здравствуйте! Это звонок из вашего банка.",
             "debt": "У вас есть задолженность по счету. Крайний срок оплаты — завтра. Вы уже оплатили?",
@@ -60,7 +68,8 @@ def make_call(client_id):
             "goodbye": "До свидания!"
         }
     else:
-        lang = "en-US"
+        lang_code = "en"
+        recog_lang = "en-US"
         t = {
             "greet": "Hello! This is a call from your bank.",
             "debt": "You have an outstanding bill. The payment deadline is tomorrow. Have you already paid?",
@@ -78,11 +87,10 @@ def make_call(client_id):
             "goodbye": "Goodbye!"
         }
 
-    speak(t["greet"])
+    speak(t["greet"], lang=lang_code)
+    speak(t["debt"], lang=lang_code)
+    response = listen(recog_lang)
 
-    # Ask about payment
-    speak(t["debt"])
-    response = listen(lang)
     if "yes" in response or "да" in response:
         result = "success"
         comment = "confirmed payment"
@@ -90,7 +98,7 @@ def make_call(client_id):
         result = "success"
         comment = "needs help or follow-up"
     elif "call back" in response or "перезвони" in response:
-        speak(t["callback"])
+        speak(t["callback"], lang=lang_code)
         return {"client_id": client_id, "result": "fail", "comment": "asked for callback"}
     elif response in ["unknown", "error"]:
         result = "fail"
@@ -99,52 +107,43 @@ def make_call(client_id):
         result = "success"
         comment = "received info"
 
-    # Ask if customer needs help
-    speak(t["help"])
-    listen(lang)
+    speak(t["help"], lang=lang_code)
+    listen(recog_lang)
 
-    # Share tariff info
-    speak(t["tariff"])
+    speak(t["tariff"], lang=lang_code)
 
-    # Collect info
-    speak(t["ask_name"])
-    name = listen(lang)
+    speak(t["ask_name"], lang=lang_code)
+    name = listen(recog_lang)
 
-    speak(t["ask_age"])
-    age = listen(lang)
+    speak(t["ask_age"], lang=lang_code)
+    age = listen(recog_lang)
 
-    speak(t["ask_notify"])
-    notification = listen(lang)
+    speak(t["ask_notify"], lang=lang_code)
+    notify = listen(recog_lang)
 
-    # Say call time
-    time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    speak(f"{t['call_time']}{time_now}")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    speak(f"{t['call_time']}{now}", lang=lang_code)
 
-    # Communication type
-    speak(t["comm_type"])
-    comm = listen(lang)
+    speak(t["comm_type"], lang=lang_code)
+    comm = listen(recog_lang)
 
-    # History
-    speak(t["history"])
-
-    speak(t["thanks"])
-    speak(t["goodbye"])
+    speak(t["history"], lang=lang_code)
+    speak(t["thanks"], lang=lang_code)
+    speak(t["goodbye"], lang=lang_code)
 
     return {
         "client_id": client_id,
         "result": result,
-        "comment": f"{comment}; name: {name}, age: {age}, notify: {notification}, comm: {comm}"
+        "comment": f"{comment}; name: {name}, age: {age}, notify: {notify}, comm: {comm}"
     }
 
-# Log result in table format
-def log_result(result_dict):
+# Log result
+def log_result(result):
     print("\n📞 Call Summary:")
     print("client_id | result     | comment")
     print("----------------------------------------------")
-    print(f"{result_dict['client_id']}        | {result_dict['result']} | {result_dict['comment']}")
+    print(f"{result['client_id']}        | {result['result']} | {result['comment']}")
 
-# Example call
+# Run call
 call_result = make_call(10001)
 log_result(call_result)
-
-
