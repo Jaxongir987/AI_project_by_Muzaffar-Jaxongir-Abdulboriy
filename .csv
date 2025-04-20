@@ -1,0 +1,10 @@
+client_id,result,comment,name,age,notify,comm_type,call_time
+10001,failure, success,Bob,25,SMS,landline,2025-05-03 10:29
+10002,success,success,Charlie,30,SMS,mobil,2025-06-15 12:00
+10003,success,success,Azamat,18,SMS,mobil,2025-04-20 17:30
+10004,failure,success,Diana,22,SMS,landline,2025-07-22 14:45        
+10005,success,success,Eva,28,SMS,mobil,2025-08-30 09:15
+10006,failure,success,Frank,35,SMS,landline,2025-09-10 11:00
+10007,success,success,George,40,SMS,mobil,2025-10-05 13:30
+10008,failure,success,Hannah,29,SMS,landline,2025-11-12 15:00
+10009,success,success,Ian,33,SMS,mobil,2025-12-01 16:45

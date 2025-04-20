@@ -2,6 +2,7 @@ import pyttsx3
 import speech_recognition as sr
 import datetime
 import sqlite3
+import csv
 
 # Init TTS engine with male voice
 tts_engine = pyttsx3.init()
@@ -144,7 +145,7 @@ def log_result(result_dict):
     print(f"{result_dict['client_id']}        | {result_dict['result']} | {result_dict['comment']}")
 
 # Example call
-call_result = make_call(10001)
+call_result = make_call(10003)
 log_result(call_result)
 
 
